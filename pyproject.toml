@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-sqlton = {path = "../sqlton"}
+sqlton = "^0.1.4"
 
 
 [build-system]
