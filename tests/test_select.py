@@ -7,7 +7,7 @@ from sqlton import parse
 def test_simple_select():
     statement = "select * from cities"
 
-    database = {"cities":({"name": "Prague"}, {"name":"Moulins sur Allier"})}
+    database = {"cities":({"name": "Prague"}, {"name":"Paris"})}
     engine = Engine(database)
     engine.execute(statement)
     
@@ -17,7 +17,7 @@ def test_simple_select():
 def test_double_select():
     statement = "select cities.name as city, countries.name as country from cities, countries"
 
-    database = {"cities":({"name": "Prague"}, {"name":"Moulins sur Allier"}),
+    database = {"cities":({"name": "Prague"}, {"name":"Paris"}),
                 "countries":({"name": "Czechia"}, {"name": "France"})}
     engine = Engine(database)
     engine.execute(statement)
@@ -33,7 +33,7 @@ where cities.country=countries.name
     """
 
     database = {"cities":({"name": "Prague", "country": "Czechia"},
-                          {"name":"Moulins sur Allier", "country": "France"}),
+                          {"name":"Paris", "country": "France"}),
                 "countries":({"name": "Czechia", "language": "Czech"},
                              {"name": "France", "language": "French"})}
     engine = Engine(database)
@@ -53,12 +53,13 @@ from cities
     """
 
     database = {"cities":({"name": "Prague", "country": "Czechia"},
-                          {"name":"Moulins sur Allier", "country": "France"}),
+                          {"name": "Cesky Krumlov", "country": "Czechia"},
+                          {"name":"Paris", "country": "France"}),
                 "countries":({"name": "Czechia", "language": "Czech"},
                              {"name": "France", "language": "French"}),
-                "citizens":({"name": "Ernest Soucachet", "city": "Moulins sur Allier"},
-                            {"name": "Kvido Bajeux", "city": "Prague"},
-                            {"name": "Zora Bajeux", "city": "Prague"})}
+                "citizens":({"name": "Pablo Picasso", "city": "Paris"},
+                            {"name": "Alfons Mucha", "city": "Prague"},
+                            {"name": "Egon Schiele", "city": "Cesky Krumlov"})}
     engine = Engine(database)
     engine.execute(statement)
     
@@ -75,12 +76,12 @@ def test_union():
     """
     
     engine = Engine({"cities":({"name": "Prague", "country": "Czechia"},
-                                        {"name":"Moulins sur Allier", "country": "France"}),
+                                        {"name":"Paris", "country": "France"}),
                               "countries":({"name": "Czechia", "language": "Czech"},
                                            {"name": "France", "language": "French"}),
-                              "citizens":({"name": "Ernest Soucachet", "city": "Moulins sur Allier"},
-                                         {"name": "Kvido Bajeux", "city": "Prague"},
-                                         {"name": "Zora Bajeux", "city": "Prague"})})
+                              "citizens":({"name": "Auguste Renoir", "city": "Paris"},
+                                         {"name": "Alfons Mucha", "city": "Prague"},
+                                         {"name": "Jiri Manes", "city": "Prague"})})
 
     engine.execute(statement)
     
@@ -109,10 +110,10 @@ def test_values():
     statement = "Values('a', 'b', Null)"
 
     engine = Engine({"cities":({"name": "Prague", "country": "Czechia"},
-                                        {"name": "Moulins sur Allier", "country": "France"},
-                                        {"name": "Hobbitburg", "country": "Middle-earth"}),
-                              "countries":({"name": "Czechia", "language": "Czech"},
-                                           {"name": "France", "language": "French"})})
+                               {"name": "Moulins sur Allier", "country": "France"},
+                               {"name": "Hobbitburg", "country": "Middle-earth"}),
+                     "countries":({"name": "Czechia", "language": "Czech"},
+                                  {"name": "France", "language": "French"})})
     
     engine.execute(statement)
     

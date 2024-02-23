@@ -13,10 +13,7 @@ class Scope(dict[str, Entry]):
             ctes = ctes | args[0].ctes
             
         self.ctes = ctes
-        
 
-def merge(scope: Scope, table: str, entry: Entry) -> Scope:
-    return scope | {table:entry}
 
 def lookup(scope: Scope, reference:str | tuple[str, str]):
     if isinstance(reference, str):

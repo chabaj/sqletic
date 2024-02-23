@@ -12,8 +12,9 @@ class Database:
 def test_insert_from_values():
     statement = """insert into cities (name, country)
     Values ('Prague', 'Czechia'),
-           ('Moulins sur Allier', 'France'),
-           ('Hobbitburg' , 'Middle-earth')"""
+           ('Paris', 'France'),
+           ('Hobbitburg' , 'Middle-earth'),
+           ('Rome', 'Italy')"""
 
     database = {"cities":[{"name":"Corusant", "country":"Coruscant", "planet":"Coruscant"}]}
     engine = Engine(Database(database))
@@ -29,7 +30,8 @@ def test_insert_from_select():
     database = {"cities":[{"name":"Corusant", "country":"Coruscant", "planet":"Coruscant"},
                           {"name":"Mos Eisley", "country":"Jabba the hut territory", "planet": "Tatooine"},
                           {"name":"Praha", "country": "Czechia"},
-                          {"name":"Brno", "country": "Czechia"}],
+                          {"name":"Brno", "country": "Czechia"},
+                          {"name":"Paris", "country": "France"}],
                 "countries":[]}
     engine = Engine(Database(database))
     
