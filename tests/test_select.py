@@ -4,17 +4,10 @@ from sqletic import Engine
 from sqlton.parser import Table, Column, Operation
 from sqlton import parse
 
-class Database:
-    def __init__(self, tables: dict[str, Iterable[dict]]):
-        self.tables = tables
-
-    def table(self, name:str):
-        return self.tables[name]
-
 def test_simple_select():
     statement = "select * from cities"
 
-    database = Database({"cities":({"name": "Prague"}, {"name":"Moulins sur Allier"})})
+    database = {"cities":({"name": "Prague"}, {"name":"Moulins sur Allier"})}
     engine = Engine(database)
     engine.execute(statement)
     
@@ -24,8 +17,8 @@ def test_simple_select():
 def test_double_select():
     statement = "select cities.name as city, countries.name as country from cities, countries"
 
-    database = Database({"cities":({"name": "Prague"}, {"name":"Moulins sur Allier"}),
-                              "countries":({"name": "Czechia"}, {"name": "France"})})
+    database = {"cities":({"name": "Prague"}, {"name":"Moulins sur Allier"}),
+                "countries":({"name": "Czechia"}, {"name": "France"})}
     engine = Engine(database)
     engine.execute(statement)
     
@@ -39,10 +32,10 @@ from cities, countries
 where cities.country=countries.name
     """
 
-    database = Database({"cities":({"name": "Prague", "country": "Czechia"},
-                                   {"name":"Moulins sur Allier", "country": "France"}),
-                         "countries":({"name": "Czechia", "language": "Czech"},
-                                      {"name": "France", "language": "French"})})
+    database = {"cities":({"name": "Prague", "country": "Czechia"},
+                          {"name":"Moulins sur Allier", "country": "France"}),
+                "countries":({"name": "Czechia", "language": "Czech"},
+                             {"name": "France", "language": "French"})}
     engine = Engine(database)
     engine.execute(statement)
     
@@ -59,13 +52,13 @@ from cities
            on (cities.name=citizens.city)
     """
 
-    database = Database({"cities":({"name": "Prague", "country": "Czechia"},
-                                   {"name":"Moulins sur Allier", "country": "France"}),
-                         "countries":({"name": "Czechia", "language": "Czech"},
-                                      {"name": "France", "language": "French"}),
-                         "citizens":({"name": "Ernest Soucachet", "city": "Moulins sur Allier"},
-                                     {"name": "Kvido Bajeux", "city": "Prague"},
-                                     {"name": "Zora Bajeux", "city": "Prague"})})
+    database = {"cities":({"name": "Prague", "country": "Czechia"},
+                          {"name":"Moulins sur Allier", "country": "France"}),
+                "countries":({"name": "Czechia", "language": "Czech"},
+                             {"name": "France", "language": "French"}),
+                "citizens":({"name": "Ernest Soucachet", "city": "Moulins sur Allier"},
+                            {"name": "Kvido Bajeux", "city": "Prague"},
+                            {"name": "Zora Bajeux", "city": "Prague"})}
     engine = Engine(database)
     engine.execute(statement)
     
@@ -81,13 +74,13 @@ def test_union():
     select name, 'Citizen' from citizens
     """
     
-    engine = Engine(Database({"cities":({"name": "Prague", "country": "Czechia"},
+    engine = Engine({"cities":({"name": "Prague", "country": "Czechia"},
                                         {"name":"Moulins sur Allier", "country": "France"}),
                               "countries":({"name": "Czechia", "language": "Czech"},
                                            {"name": "France", "language": "French"}),
                               "citizens":({"name": "Ernest Soucachet", "city": "Moulins sur Allier"},
                                          {"name": "Kvido Bajeux", "city": "Prague"},
-                                         {"name": "Zora Bajeux", "city": "Prague"})}))
+                                         {"name": "Zora Bajeux", "city": "Prague"})})
 
     engine.execute(statement)
     
@@ -101,11 +94,11 @@ def test_intersection():
     select name as Country from countries
     """
 
-    engine = Engine(Database({"cities":({"name": "Prague", "country": "Czechia"},
+    engine = Engine({"cities":({"name": "Prague", "country": "Czechia"},
                                         {"name": "Moulins sur Allier", "country": "France"},
                                         {"name": "Hobbitburg", "country": "Middle-earth"}),
                               "countries":({"name": "Czechia", "language": "Czech"},
-                                           {"name": "France", "language": "French"})}))
+                                           {"name": "France", "language": "French"})})
 
     engine.execute(statement)
     
@@ -115,11 +108,11 @@ def test_intersection():
 def test_values():
     statement = "Values('a', 'b', Null)"
 
-    engine = Engine(Database({"cities":({"name": "Prague", "country": "Czechia"},
+    engine = Engine({"cities":({"name": "Prague", "country": "Czechia"},
                                         {"name": "Moulins sur Allier", "country": "France"},
                                         {"name": "Hobbitburg", "country": "Middle-earth"}),
                               "countries":({"name": "Czechia", "language": "Czech"},
-                                           {"name": "France", "language": "French"})}))
+                                           {"name": "France", "language": "French"})})
     
     engine.execute(statement)
     
@@ -129,21 +122,30 @@ def test_values():
 
 def test_with():
     statement = """
-    WITH RECURSIVE
-  works_for_alice(n) AS (
-    VALUES('Alice')
+WITH RECURSIVE
+knows_alice(name) AS (
+         VALUES('Alice')
     UNION
-    SELECT name FROM org, works_for_alice
-     WHERE org.boss=works_for_alice.n
-  )
-SELECT avg(height) FROM org
- WHERE org.name IN works_for_alice
+         SELECT name
+         FROM org, knows_alice
+         WHERE org.boss=knows_alice.name
+    )
+SELECT name FROM knows_alice
 """
 
-    engine = Engine(Database({"org":[{"name":"Alice", "boss":"Robert"}, {"name":"George", "boss":"Alice"}]}))
+    engine = Engine({"org":[{"name":"Robert", "boss":None},
+                            {"name":"Michael", "boss":"Robert"},
+                            {"name":"Alice", "boss":"Robert"},
+                            {"name":"George", "boss":"Alice"},
+                            {"name":"Alan", "boss":"Alice"},
+                            {"name":"John", "boss":"Alan"}],
+                     "family":[{"name":"Adam", "relative":"Alice"},
+                               {"name":"Zachary", "relative":"Alan"},
+                               {"name":"Alice", "relative":"Zachary"},
+                               {"name":"Alan", "relative":"Alan"}]})
 
     engine.execute(statement)
-    
+
     for index, entry in enumerate(engine):
         print(entry, engine.rowcount, engine.description)
         

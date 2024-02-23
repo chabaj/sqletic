@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tinydb-sql"
+name = "sqletic"
 version = "0.1.0"
 description = ""
 authors = ["Charles Bajeux <charles.bajeux@gmail.com>"]

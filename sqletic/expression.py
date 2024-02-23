@@ -1,5 +1,5 @@
 from sqlton.ast import Alias, Operation, Column
-from tinydb_sql.scope import lookup
+from sqletic.scope import lookup
 import datetime
 import operator
 

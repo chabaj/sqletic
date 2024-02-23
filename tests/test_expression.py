@@ -1,4 +1,4 @@
-from tinydb_sql import Filter
+from sqletic import Filter
 from sqlton.parser import Table, Column, Operation
 from sqlton import parse
 

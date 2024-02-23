@@ -1,21 +1,75 @@
-from sqlton.ast import All, Alias, Operation, Column, Select, SelectCore, Values, Insert, Update, Table
+from sqlton.ast import All, Alias, Index, Operation, Column, Select, SelectCore, Values, Insert, Update, Table
 from sqlton import parse
 from sqletic.scope import lookup, Scope, Entry
 from sqletic.expression import Evaluator
 
+def keep_recursive_set(name, expression):
+    def in_collection(collection):
+        if isinstance(collection, Values):
+            return False
+        elif isinstance(collection, Alias):
+            return in_collection(collection.original)
+        elif isinstance(collection, Index):
+            return in_collection(collection.table)
+        elif isinstance(collection, Table):
+            return collection.name == name
+        elif isinstance(collection, SelectCore):
+            for _collection in collection.table_list:
+                if in_collection(_collection):
+                    return True
+        elif isinstance(collection, Operation) and collection.operator[0] == 'JOIN':
+            return in_collection(_collection.a) or in_collection(_collection.b)
+    
+    if isinstance(expression, Operation):
+        if expression.operator[0] in ('UNION', 'INTERSECT', 'EXCEPT'):
+            in_a = in_collection(expression.a)
+            in_b = in_collection(expression.b)
+            
+            if in_a and in_b:
+                return expression
+            elif not in_a:
+                return keep_recursive_set(name, expression.b)
+            elif not in_b:
+                return keep_recursive_set(name, expression.a)
+            else:
+                raise Exception("CT shall have been refered in one of the branch")
+        else:
+            return expression
+    else:
+        return expression
+                
 class CommonTable:
-    def __init__(self, engine, name, columns, select):
-        self.engine = Engine(engine.database | {name:self})
+    def __init__(self, engine, name, columns, select, entries=None):
+        if (entries is None and
+            not (isinstance(select, Operation) and
+                 select.operator[0] in ('UNION', 'INTERSECT', 'EXCEPT'))):
+            raise ValueError('Root expression shall be set operation of values and/or select expression')
+        
+        self.engine = Engine(engine.tables | {name: entries if entries else []})
         self.name = name
         self.columns = columns
         self.select = select
 
-    def iterage(self, scope):
-        yield from self.engine(scope, iterable).iterate({}, self.select)
+    def __iter__(self):
+        entries = []
+        
+        for _, scope in self.engine.iterate({}, self.select):
+            entry = dict(zip(self.columns, scope[None].values())) 
+            entries.append(entry)
+            yield entry
 
+        if entries:
+            select = keep_recursive_set(self.name, self.select)
+            yield from CommonTable(self.engine,
+                                   self.name,
+                                   self.columns,
+                                   select,
+                                   entries)
+
+        
 class Engine:
-    def __init__(self, database):
-        self.database = database
+    def __init__(self, tables):
+        self.tables = tables
         self.iterator = None
         self.description = ()
         self.rowcount = 0
@@ -32,8 +86,6 @@ class Engine:
     def execute(self, statement):
         statement = parse(statement)
 
-        print('statement:', statement)
-        
         if isinstance(statement, Select): 
             self.iterator = self.iterate({}, statement)
         elif isinstance(statement, Insert):
@@ -51,7 +103,7 @@ class Engine:
         if not (len(statement.columns) == 1 and isinstance(statement.columns[0], All)):
             entries = (dict(zip(statement.columns, entry.values())) for entry in entries)
         
-        self.database.tables[statement.target.name].extend(entries)
+        self.tables[statement.target.name].extend(entries)
 
     def execute_update(self, statement):
         if isinstance(statement.target, Alias):
@@ -61,7 +113,7 @@ class Engine:
             table = statement.target.name
             alias = statement.target.name
 
-        for entry in self.database.tables[table]:
+        for entry in self.tables[table]:
             scope = {alias:entry}
             
             if statement.tables:
@@ -136,11 +188,11 @@ class Engine:
 
     def iterate_select(self, scope, select:Select):
         if hasattr(select, 'with_clause'):
-            scope[CommonTable] = {select.with_clause.cte.name: CommonTable(self,
-                                                                           select.with_clause.cte.name,
-                                                                           (column.name
-                                                                            for colum in select.with_clause.result_column_list),
-                                                                           select.with_clause.cte.select)}
+            scope[CommonTable] = {cte.name: CommonTable(self,
+                                                        cte.name,
+                                                        cte.columns,
+                                                        cte.select)
+                                  for cte in select.with_clause.ctes}
             
         yield from self.iterate(scope, select.select_core)
 
@@ -194,17 +246,16 @@ class Engine:
             yield name, {name: _scope[_name]} | scope
 
     def iterate_table(self, scope, table: Table):
-        if table.name in table:
-            collection = self.database.table(table.name)
+        if table.name in self.tables:
+            collection = self.tables[table.name]
+        elif table.name in scope[CommonTable]:
+            collection = scope[CommonTable][table.name]
         else:
-            raise KeyError(f'Found no such {table.name} table neither common table')
+            raise KeyError(f'Found no such {table.name} table neither in common tables ({scope[CommonTable].keys()}) nor tables {self.tables.keys()}')
         
         for entry in collection:
             yield table.name, scope | {table.name:entry}
 
-    def iterate_commontable(self, scope, commontable):
-        yield from commontable.iterate(scope)
-            
     def iterate_operation(self, scope, operation):
         for index in range(len(operation.operator), 0, -1):
             method_name = 'iterate_operation_' + '_'.join(part
