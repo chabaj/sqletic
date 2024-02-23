@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sqletic"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Charles Bajeux <charles.bajeux@gmail.com>"]
 readme = "README.md"
