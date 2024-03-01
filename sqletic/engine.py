@@ -93,7 +93,7 @@ class Engine:
         elif isinstance(statement, Update):
             self.execute_update(statement)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f'Statement {statement}')
 
     def execute_insert(self, statement):
         entries = (self.scope_to_entry((All(),), scope)

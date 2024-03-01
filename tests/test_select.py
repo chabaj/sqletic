@@ -44,7 +44,7 @@ where cities.country=countries.name
 
 def test_simple_with_inner_join_select():
     statement = """
-select concat('In ', cities.name, ' city, the spoken language is ', corresponding_countries.language, ' where ', citizens.name, ' live.')
+select concat('In ', cities.name, ' city, the spoken language is ', corresponding_countries.language, ' where ', citizens.name, ' lives.')
 from cities
      inner join countries as corresponding_countries
            on (cities.country=corresponding_countries.name)
@@ -125,7 +125,7 @@ def test_with():
     statement = """
 WITH RECURSIVE
 knows_alice(name) AS (
-         VALUES('Alice')
+         VALUES ('Alice')
     UNION
          SELECT name
          FROM org, knows_alice

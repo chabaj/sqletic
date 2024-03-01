@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "sqletic"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Charles Bajeux <charles.bajeux@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-sqlton = "^0.1.4"
+sqlton = "^0.1.5"
 
 
 [build-system]
