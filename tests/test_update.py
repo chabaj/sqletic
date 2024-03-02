@@ -1,17 +1,9 @@
 from typing import Iterable
 from sqletic import Engine
 
-class Database:
-    def __init__(self, tables: dict[str, Iterable[dict]]):
-        self.tables = tables
-
-    def table(self, name:str):
-        return self.tables[name]
-
-
 def test_update():
     database = {"cities":[]}
-    engine = Engine(Database(database))
+    engine = Engine(database)
     
     engine.execute("""insert into cities (name, country, planet)
     Values ('Prague', 'Czechia', 'Earth'),
@@ -32,7 +24,7 @@ def test_update_from_select():
                            {"name":"Arrakis", "fictive":True},
                            {"name":"Coruscant", "fictive":True}]}
     
-    engine = Engine(Database(database))
+    engine = Engine(database)
     
     engine.execute("""insert into cities (name, country, planet)
     Values ('Prague', 'Czechia', 'Earth'),

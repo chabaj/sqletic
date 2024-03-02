@@ -1,4 +1,4 @@
-from sqlton.ast import All, Alias, Index, Operation, Column, Select, SelectCore, Values, Insert, Update, Table
+from sqlton.ast import All, Alias, Index, Operation, Column, Select, SelectCore, Values, Insert, Update, Delete, Table
 from sqlton import parse
 from sqletic.scope import lookup, Scope, Entry
 from sqletic.expression import Evaluator
@@ -92,6 +92,8 @@ class Engine:
             self.execute_insert(statement)
         elif isinstance(statement, Update):
             self.execute_update(statement)
+        elif isinstance(statement, Delete):
+            self.execute_delete(statement)
         else:
             raise NotImplementedError(f'Statement {statement}')
 
@@ -136,7 +138,34 @@ class Engine:
 
                 elif statement.alternative:
                     raise NotImplementedError("Alternative feature was not yet implemented !")
-        
+
+    def execute_delete(self, statement):
+        if isinstance(statement.target, Alias):
+            table = statement.target.original.name
+            alias = statement.target.replacement
+        else:
+            table = statement.target.name
+            alias = statement.target.name
+
+        to_remove = []
+            
+        for entry in self.tables[table]:
+            scope = {alias:entry}
+            
+            tables = ((None, scope),)
+
+            for _, scope in tables:
+                if statement.where:
+                    evaluation = Evaluator(scope)(statement.where)
+                else:
+                    evaluation = True
+
+                if evaluation:
+                    to_remove.append(entry)
+                    
+        for entry in to_remove:
+            self.tables[table].remove(entry)
+                    
     def fetchone(self):
         try:
             name, scope = next(self.iterator)
