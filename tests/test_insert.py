@@ -1,14 +1,6 @@
 from typing import Iterable
 from sqletic import Engine
 
-class Database:
-    def __init__(self, tables: dict[str, Iterable[dict]]):
-        self.tables = tables
-
-    def table(self, name:str):
-        return self.tables[name]
-
-
 def test_insert_from_values():
     statement = """insert into cities (name, country)
     Values ('Prague', 'Czechia'),
@@ -16,27 +8,25 @@ def test_insert_from_values():
            ('Hobbitburg' , 'Middle-earth'),
            ('Rome', 'Italy')"""
 
-    database = {"cities":[{"name":"Corusant", "country":"Coruscant", "planet":"Coruscant"}]}
-    engine = Engine(Database(database))
+    engine = Engine({"cities":[{"name":"Corusant", "country":"Coruscant", "planet":"Coruscant"}]})
     
     engine.execute(statement)
-    print(database)
+    print(engine.tables)
     
 def test_insert_from_select():
     statement = """insert into countries (name)
     select distinct country as name from cities
     """
 
-    database = {"cities":[{"name":"Corusant", "country":"Coruscant", "planet":"Coruscant"},
-                          {"name":"Mos Eisley", "country":"Jabba the hut territory", "planet": "Tatooine"},
-                          {"name":"Praha", "country": "Czechia"},
-                          {"name":"Brno", "country": "Czechia"},
-                          {"name":"Paris", "country": "France"}],
-                "countries":[]}
-    engine = Engine(Database(database))
+    engine = Engine({"cities":[{"name":"Corusant", "country":"Coruscant", "planet":"Coruscant"},
+                               {"name":"Mos Eisley", "country":"Jabba the hut territory", "planet": "Tatooine"},
+                               {"name":"Praha", "country": "Czechia"},
+                               {"name":"Brno", "country": "Czechia"},
+                               {"name":"Paris", "country": "France"}],
+                     "countries":[]})
     
     engine.execute(statement)
-    print(database["countries"])
+    print(engine.tables["countries"])
 
 def main():
     print("test_insert_from_values:")
